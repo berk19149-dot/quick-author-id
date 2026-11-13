@@ -3,7 +3,7 @@
   "format": 1,
   "id": "dev.berk19149.quick-author-id",
   "name": "QuickAuthorID",
-  "description": "Scan action sheet modules.",
+  "description": "Adds Copy Author ID to Long Press Menu.",
   "author": "berk19149-dot (https://github.com/berk19149-dot \"GitHub\")",
   "version": "0.1.2",
   "dependencies": {
