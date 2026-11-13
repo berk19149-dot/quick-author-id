@@ -235,13 +235,26 @@
       "description": "Adds Copy Author ID to the message long-press menu.",
       "author": "berk19149-dot (https://github.com/berk19149-dot \"GitHub\")",
       "channels": {
-        "latest": "0.1.0"
+        "latest": "0.1.1"
       },
       "versions": {
         "0.1.0": {
           "url": "https://berk19149-dot.github.io/quick-author-id/pool/dev.berk19149.quick-author-id@0.1.0.zip",
           "sha256": "c805fe203c7eb96f5f36237dcd0c5e0aaee0f00dd9041223d7b2f1e06c20036d",
           "size": 1442,
+          "dependencies": {
+            "valenced.api": {
+              "version": ">=1 <2"
+            },
+            "discord": {
+              "version": "*"
+            }
+          }
+        },
+        "0.1.1": {
+          "url": "https://berk19149-dot.github.io/quick-author-id/pool/dev.berk19149.quick-author-id@0.1.1.zip",
+          "sha256": "57eb8776bd467eddc1aefcfa999cdbd283b4233066124d7c06723e9ae49cb013",
+          "size": 602,
           "dependencies": {
             "valenced.api": {
               "version": ">=1 <2"
