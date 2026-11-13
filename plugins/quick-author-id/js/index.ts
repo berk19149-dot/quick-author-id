@@ -1,52 +1,58 @@
 
 import { ActionSheetActionCreators, ToastActionCreators } from '@valenced/discord/actions'
 import { before } from '@valenced/patcher'
+import { beforeJSX } from '@valenced/react/jsx-runtime'
 
 export default plugin({
     start({ cleanup, logger }) {
-        let inspected = false
+        let active = true
+        let reported = false
+
+        cleanup(() => {
+            active = false
+        })
 
         cleanup(before(ActionSheetActionCreators, 'openLazy', args => {
-            if (
-                args[1] !== 'MessageLongPressActionSheet' ||
-                inspected
-            ) {
+            if (args[1] !== 'MessageLongPressActionSheet') {
                 return args
             }
 
-            inspected = true
+            Promise.resolve(args[0]).then(module => {
+                if (!active) return
 
-            const lazyModule = args[0] as Promise<any>
+                const Component = module?.default
 
-            Promise.resolve(lazyModule).then(module => {
-                const component = module?.default
+                if (!Component) {
+                    logger.error('Message action sheet component not found')
+                    return
+                }
 
-                const componentName =
-                    component?.displayName ||
-                    component?.name ||
-                    typeof component
+                cleanup(beforeJSX(Component, jsxArgs => {
+                    if (!reported) {
+                        reported = true
 
-                const exports = module && typeof module === 'object'
-                    ? Object.keys(module).join(', ')
-                    : 'No module exports'
+                        const props = jsxArgs[1] ?? {}
+                        const keys = Object.keys(props).join(', ') || 'No props'
 
-                const result = `Component: ${componentName} | Exports: ${exports}`
+                        logger.log(`Message action sheet props: ${keys}`)
 
-                logger.log(result)
+                        ToastActionCreators.open('quick-author-id-props', {
+                            text: `Props: ${keys}`,
+                            variant: 'success',
+                        })
+                    }
 
-                ToastActionCreators.open('quick-author-id-inspection', {
-                    text: result,
-                    variant: 'success',
-                })
+                    return jsxArgs
+                }))
             }).catch(error => {
-                logger.error(`Inspection failed: ${String(error)}`)
+                logger.error(`Component inspection failed: ${String(error)}`)
             })
 
             return args
         }))
 
-        ToastActionCreators.open('quick-author-id-listener', {
-            text: 'Message menu inspector installed',
+        ToastActionCreators.open('quick-author-id-ready', {
+            text: 'Component inspector ready',
             variant: 'success',
         })
     },
