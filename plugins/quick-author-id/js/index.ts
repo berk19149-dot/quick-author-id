@@ -1,31 +1,26 @@
 
-import { lookupModules } from '@valenced/modules/finders'
-import { withProps } from '@valenced/modules/finders/filters'
-import { ToastActionCreators } from '@valenced/discord/actions'
+import { ActionSheetActionCreators, ToastActionCreators } from '@valenced/discord/actions'
+import { before } from '@valenced/patcher'
 
 export default plugin({
-    start({ logger }) {
-        logger.log('QuickAuthorID module scan started')
+    start({ cleanup, logger }) {
+        let detected = false
 
-        let count = 0
+        cleanup(before(ActionSheetActionCreators, 'openLazy', args => {
+            if (!detected) {
+                detected = true
 
-        for (const [module, id] of lookupModules(withProps('openLazy'))) {
-            if (count >= 3) break
+                ToastActionCreators.open('quick-author-id-detected', {
+                    text: `Action Sheet detected! Key: ${String(args[1])}`,
+                    variant: 'success',
+                })
 
-            const keys = Object.keys(module ?? {}).slice(0, 8).join(', ')
+                logger.log(`Action Sheet opened with key: ${String(args[1])}`)
+            }
 
-            ToastActionCreators.open(`quick-author-id-scan-${count}`, {
-                text: `Module ${id}: ${keys || 'No exports'}`,
-                variant: 'success',
-            })
+            return args
+        }))
 
-            logger.log(`Candidate module ${id}: ${keys}`)
-            count++
-        }
-
-        ToastActionCreators.open('quick-author-id-scan-result', {
-            text: `Scan finished. Found ${count} candidates.`,
-            variant: 'success',
-        })
+        logger.log('Action Sheet listener installed')
     },
 })
