@@ -3,9 +3,9 @@
   "format": 1,
   "id": "dev.berk19149.quick-author-id",
   "name": "QuickAuthorID",
-  "description": "Adds Copy Author ID to the message long-press menu.",
+  "description": "Scan action sheet modules.",
   "author": "berk19149-dot (https://github.com/berk19149-dot \"GitHub\")",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dependencies": {
     "valenced.api": { "version": ">=1 <2" },
     "discord": { "version": "*" }
