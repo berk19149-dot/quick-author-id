@@ -4,23 +4,50 @@ import { before } from '@valenced/patcher'
 
 export default plugin({
     start({ cleanup, logger }) {
-        let detected = false
+        let inspected = false
 
         cleanup(before(ActionSheetActionCreators, 'openLazy', args => {
-            if (!detected) {
-                detected = true
+            if (
+                args[1] !== 'MessageLongPressActionSheet' ||
+                inspected
+            ) {
+                return args
+            }
 
-                ToastActionCreators.open('quick-author-id-detected', {
-                    text: `Action Sheet detected! Key: ${String(args[1])}`,
+            inspected = true
+
+            const lazyModule = args[0] as Promise<any>
+
+            Promise.resolve(lazyModule).then(module => {
+                const component = module?.default
+
+                const componentName =
+                    component?.displayName ||
+                    component?.name ||
+                    typeof component
+
+                const exports = module && typeof module === 'object'
+                    ? Object.keys(module).join(', ')
+                    : 'No module exports'
+
+                const result = `Component: ${componentName} | Exports: ${exports}`
+
+                logger.log(result)
+
+                ToastActionCreators.open('quick-author-id-inspection', {
+                    text: result,
                     variant: 'success',
                 })
-
-                logger.log(`Action Sheet opened with key: ${String(args[1])}`)
-            }
+            }).catch(error => {
+                logger.error(`Inspection failed: ${String(error)}`)
+            })
 
             return args
         }))
 
-        logger.log('Action Sheet listener installed')
+        ToastActionCreators.open('quick-author-id-listener', {
+            text: 'Message menu inspector installed',
+            variant: 'success',
+        })
     },
 })
