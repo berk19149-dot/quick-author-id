@@ -5,10 +5,12 @@ import { beforeJSX } from '@valenced/react/jsx-runtime'
 import { Design } from '@valenced/discord/design'
 import { ActionSheetActionCreators, ToastActionCreators } from '@valenced/discord/actions'
 import { Clipboard } from '@valenced/externals/react-native-clipboard'
+import { lookupGeneratedIconComponent } from '@valenced/utils/discord'
 
 export default plugin({
     start({ cleanup }) {
         const ActionSheetRow = (Design as any).ActionSheetRow
+        const CopyIcon = lookupGeneratedIconComponent('CopyIcon')
         let authorId = ''
 
         cleanup(before(
@@ -39,7 +41,7 @@ export default plugin({
 
             if (
                 !authorId ||
-                !['Yanıtla', 'Reply'].includes(String(props.label)) 
+                !['Yanıtla', 'Reply'].includes(String(props.label))
             ) return args
 
             const id = authorId
@@ -53,6 +55,7 @@ export default plugin({
 
             const copyRow = React.createElement(ActionSheetRow, {
                 label: 'Copy Author ID',
+                icon: CopyIcon ? React.createElement(CopyIcon) : undefined,
                 onPress: async () => {
                     await Clipboard.setString(id)
                     ToastActionCreators.open('quick-author-copied', {
