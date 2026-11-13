@@ -1,75 +1,58 @@
 
-import { ActionSheetActionCreators, ToastActionCreators } from '@valenced/discord/actions'
-import { before } from '@valenced/patcher'
+import { Design } from '@valenced/discord/design'
+import { ToastActionCreators } from '@valenced/discord/actions'
 import { beforeJSX } from '@valenced/react/jsx-runtime'
 
 export default plugin({
-    start({ cleanup, logger }) {
-        let active = true
-        let reported = false
+    start({ cleanup }) {
+        const names = Object.keys(Design).filter(name =>
+            /ActionSheet|SheetRow/i.test(name)
+        )
 
-        cleanup(() => {
-            active = false
+        const chunks: string[] = []
+        let current = ''
+
+        for (const name of names) {
+            if ((current + name).length > 100) {
+                chunks.push(current)
+                current = ''
+            }
+            current += (current ? ', ' : '') + name
+        }
+
+        if (current) chunks.push(current)
+
+        chunks.forEach((chunk, i) => {
+            ToastActionCreators.open(`quick-author-design-${i}`, {
+                text: `Design exports ${i + 1}/${chunks.length}: ${chunk}`,
+                variant: 'success',
+            })
         })
 
-        cleanup(before(ActionSheetActionCreators, 'openLazy', args => {
-            if (args[1] !== 'MessageLongPressActionSheet') return args
+        let detected = 0
 
-            Promise.resolve(args[0]).then(module => {
-                if (!active) return
+        for (const name of names) {
+            const Component = (Design as any)[name]
+            if (!Component) continue
 
-                const Component = module?.default
-                if (!Component) return
+            cleanup(beforeJSX(Component, args => {
+                if (detected >= 5) return args
 
-                cleanup(beforeJSX(Component, jsxArgs => {
-                    if (reported) return jsxArgs
-                    reported = true
+                detected++
 
-                    const props = jsxArgs[1] ?? {}
+                const props = args[1] ?? {}
+                const keys = Object.keys(props).join(', ') || 'No props'
 
-                    const details = Object.entries(props).map(([key, value]) => {
-                        const type = typeof value
-                        const nested = value && type === 'object'
-                            ? Object.keys(value).slice(0, 8).join('/')
-                            : ''
-
-                        return nested
-                            ? `${key}:${type}(${nested})`
-                            : `${key}:${type}`
-                    })
-
-                    const chunks: string[] = []
-                    let current = ''
-
-                    for (const item of details) {
-                        if ((current + item).length > 140) {
-                            chunks.push(current)
-                            current = ''
-                        }
-                        current += (current ? ', ' : '') + item
+                ToastActionCreators.open(
+                    `quick-author-row-${detected}`,
+                    {
+                        text: `${name}: ${keys}`,
+                        variant: 'success',
                     }
+                )
 
-                    if (current) chunks.push(current)
-
-                    chunks.forEach((chunk, index) => {
-                        ToastActionCreators.open(`quick-author-props-${index}`, {
-                            text: `Props ${index + 1}/${chunks.length}: ${chunk}`,
-                            variant: 'success',
-                        })
-                    })
-
-                    logger.log(`Props: ${details.join(', ')}`)
-
-                    return jsxArgs
-                }))
-            }).catch(error => logger.error(String(error)))
-
-            return args
-        }))
-
-        ToastActionCreators.open('quick-author-ready', {
-            text: 'Props inspector ready',
-            variant: 'success',
-        })
+                return args
+            }))
+        }
     },
 })
